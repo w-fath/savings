@@ -1,0 +1,82 @@
+.savings-box {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.savings-box p {
+    font-size: 18px;
+    color: #555;
+}
+
+.savings-box h3 {
+    font-size: 36px;
+    color: #f7931e;
+}
+.savings-box h5 {
+    font-size: 25px;
+    color: #f7931e;
+}
+.g-recaptcha {
+    transform: scale(0.70);
+    transform-origin: 0 0;
+}
+.jarak{
+    margin-top: -20px;
+}
+.alert-dismissible .fade {
+    opacity: 0;
+    transition: opacity 0.5s ease-out;
+}
+
+.alert-dismissible .show {
+    opacity: 1;
+}
+
+.alert-dismissible .fade-out {
+    opacity: 0;
+    transition: opacity 0.5s ease-out;
+}
+@keyframes fadeOutAndShrink {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(0);
+    }
+}
+
+.alert-dismissible.fade-out {
+    animation: fadeOutAndShrink 0.5s forwards;
+}
+.fade-out {
+    animation: fadeOut 0.5s forwards;
+}
+
+@keyframes fadeOut {
+    0% {
+        opacity: 1;
+        transform: scaleX(1) scaleY(1);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scaleX(0.9) scaleY(0.9);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scaleX(0) scaleY(0);
+    }
+}
+
+
