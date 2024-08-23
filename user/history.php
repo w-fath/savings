@@ -180,7 +180,6 @@ $result_withdrawal = $stmt_withdrawal->get_result();
                                                     <ul class="dropdown-menu">
                                                         <?php if ($row['status'] === 'Pending'): ?>
                                                             <li><a class="dropdown-item cancel-withdrawal" href="#" data-id="<?php echo $row['id']; ?>">Batal</a></li>
-                                                            <li><a class="dropdown-item" href="detail_withdrawal.php?id=<?php echo $row['id']; ?>">Detail</a></li>
                                                         <?php elseif ($row['status'] === 'Done'): ?>
                                                             <li><a class="dropdown-item" href="detail_withdrawal.php?id=<?php echo $row['id']; ?>">Detail</a></li>
                                                         <?php endif; ?>

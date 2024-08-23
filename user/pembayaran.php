@@ -213,10 +213,22 @@ if ($some_id !== null) {
                             <input type="hidden" name="id_metode" value="<?php echo htmlspecialchars($id_metode); ?>">
                         </div>
 
-                        <div class="mb-3">
-                            <label for="no_metode" class="form-label">Rek Penerima</label>
-                            <input type="text" name="no_metode" id="no_metode" class="form-control" value="<?php echo htmlspecialchars($no_metode); ?>" readonly>
-                        </div>
+                        <?php if ($id_metode == 3): ?>
+                            <div class="mb-3">
+                                <label for="qr_code" class="form-label">Scan QR Code</label><br>
+                                <img src="../assets/qr/qr.jpg" alt="QR Code" class="qr-code img-fluid">
+                            </div>
+                            <style>
+                                .qr-code {
+                                    width: 150px;
+                                }
+                            </style>
+                        <?php else: ?>
+                            <div class="mb-3">
+                                <label for="no_metode" class="form-label">Rek Penerima</label>
+                                <input type="text" name="no_metode" id="no_metode" class="form-control" value="<?php echo htmlspecialchars($no_metode); ?>" readonly>
+                            </div>
+                        <?php endif; ?>
 
                         <div class="mb-3">
                             <label for="img" class="form-label">Unggah Bukti Pembayaran</label>

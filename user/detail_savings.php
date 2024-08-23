@@ -19,9 +19,10 @@ if (!$id_nabung) {
 }
 
 // Ambil data detail tabungan dari database
-$query = "SELECT n.*, u.fullname, t.img FROM nabung n 
+$query = "SELECT n.*, u.fullname, t.img, m.nama FROM nabung n 
 JOIN users u ON n.user_id = u.id 
 LEFT JOIN transfer t ON n.id = t.id_nabung 
+JOIN metode m ON n.id_pembayaran = m.id 
 WHERE n.id = ?";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $id_nabung);
@@ -40,7 +41,11 @@ $stmt->close();
 $datetime = new DateTime($detail_savings['tanggal']);
 $formatted_date = $datetime->format('d-m-Y');
 $formatted_time = $datetime->format('H:i:s');
+
+// Ambil metode pembayaran
+$formatted_metode = $detail_savings['nama'];
 ?>
+
 <!DOCTYPE html>
 <html lang="id">
 
@@ -50,6 +55,7 @@ $formatted_time = $datetime->format('H:i:s');
     <title>Detail Tabungan</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/style.css">
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         .logout {
             color: red;
@@ -82,7 +88,7 @@ $formatted_time = $datetime->format('H:i:s');
                         <a class="nav-link" href="contact.php">Kontak</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link logout" href="../logout.php"><b>Logout</b></a>
+                        <a class="nav-link logout" href="../logout.php" id="logoutLink"><b>Logout</b></a>
                     </li>
                 </ul>
             </div>
@@ -99,6 +105,10 @@ $formatted_time = $datetime->format('H:i:s');
                             <tr>
                                 <th>Nama Pengguna</th>
                                 <td><?php echo htmlspecialchars($detail_savings['fullname']); ?></td>
+                            </tr>
+                            <tr>
+                                <th>Pembayaran</th>
+                                <td><?php echo htmlspecialchars($formatted_metode); ?></td>
                             </tr>
                             <tr>
                                 <th>Tanggal</th>
@@ -134,6 +144,23 @@ $formatted_time = $datetime->format('H:i:s');
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('logoutLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Apakah Anda yakin ingin logout?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, logout!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = this.getAttribute('href');
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>

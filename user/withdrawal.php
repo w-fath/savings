@@ -11,6 +11,27 @@ $logged_in_user_id = $_SESSION['user_id'];
 $errors = [];
 $success_message = '';
 
+// Ambil total tabungan dari tabel nabung untuk user yang sedang login
+$query_total_tabungan = "SELECT SUM(jumlah) AS total_tabungan FROM nabung WHERE user_id = ?";
+$stmt_total = $conn->prepare($query_total_tabungan);
+$stmt_total->bind_param("i", $logged_in_user_id);
+$stmt_total->execute();
+$result_total = $stmt_total->get_result();
+$row_total = $result_total->fetch_assoc();
+$total_tabungan = $row_total['total_tabungan'] ? $row_total['total_tabungan'] : 0; // Jika null, default ke 0
+
+// Ambil total penarikan untuk user yang sedang login
+$query_total_withdrawal = "SELECT SUM(jumlah) AS total_withdrawal FROM withdrawal WHERE user_id = ?";
+$stmt_withdrawal = $conn->prepare($query_total_withdrawal);
+$stmt_withdrawal->bind_param("i", $logged_in_user_id);
+$stmt_withdrawal->execute();
+$result_withdrawal = $stmt_withdrawal->get_result();
+$row_withdrawal = $result_withdrawal->fetch_assoc();
+$total_withdrawal = $row_withdrawal['total_withdrawal'] ? $row_withdrawal['total_withdrawal'] : 0; // Jika null, default ke 0
+
+// Hitung total tabungan yang terkurangi dengan penarikan
+$adjusted_total_tabungan = $total_tabungan - $total_withdrawal;
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $jumlah = isset($_POST['jumlah']) ? intval($_POST['jumlah']) : 0;
     $nama_bank = isset($_POST['nama_bank']) ? trim($_POST['nama_bank']) : '';
@@ -26,18 +47,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $errors[] = "Nomor rekening bank harus diisi.";
     }
 
-    // Jika tidak ada error, lakukan proses penarikan
-    if (empty($errors)) {
-        $status = 'Pending'; // Set status awal sebagai "Pending"
+    if ($jumlah > $adjusted_total_tabungan) {
+        $errors[] = "Jumlah penarikan melebihi saldo tabungan.";
+        $_SESSION['error'] = "Jumlah penarikan melebihi saldo tabungan.";
+    } else {
+        $status = 'Pending';
         $tanggal = date('Y-m-d H:i:s');
 
         $query = "INSERT INTO withdrawal (user_id, jumlah, status, nama_bank, no_bank, tanggal) 
-                  VALUES (?, ?, ?, ?, ?, ?)";
+              VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($query);
         $stmt->bind_param("iissss", $logged_in_user_id, $jumlah, $status, $nama_bank, $no_bank, $tanggal);
 
         if ($stmt->execute()) {
-            $success_message = "Penarikan berhasil diajukan.";
+            $_SESSION['success'] = "Penarikan berhasil diajukan, Proses Max. 2-3 hari";
+            $_SESSION['last_inserted_id'] = $stmt->insert_id;
+            header("Location: withdrawal.php");
+            exit;
         } else {
             $errors[] = "Terjadi kesalahan saat mengajukan penarikan.";
         }
@@ -106,22 +132,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="col-md-12">
                 <div class="card savings-box mt-4 mx-1">
                     <h3 class="card-title text-center mb-4">Withdrawal</h3>
-
-                    <?php if (!empty($errors)): ?>
-                        <div class="alert alert-danger">
-                            <?php foreach ($errors as $error): ?>
-                                <p><?php echo $error; ?></p>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-
-                    <?php if (!empty($success_message)): ?>
-                        <div id="successAlert" class="alert alert-success alert-dismissible fade show" role="alert">
-                            <?php echo $success_message; ?>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    <?php endif; ?>
-
+                    <!-- Tampilkan total tabungan yang sudah dikurangi dengan penarikan -->
+                    <h5>Total Tabungan: Rp <?php echo number_format($adjusted_total_tabungan, 0, ',', '.'); ?></h5>
                     <form action="withdrawal.php" method="POST">
                         <div class="mb-3">
                             <label for="jumlah" class="form-label">Jumlah Penarikan</label>
@@ -160,6 +172,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     }
                 });
             });
+
+            <?php if (isset($_SESSION['success'])): ?>
+                Swal.fire({
+                    title: '<?php echo $_SESSION['success']; ?>',
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = 'history.php?id=<?php echo $_SESSION['last_inserted_id']; ?>';
+                    }
+                });
+                <?php unset($_SESSION['success']); ?>
+            <?php endif; ?>
+
+            <?php if (isset($_SESSION['error'])): ?>
+                Swal.fire({
+                    title: '<?php echo $_SESSION['error']; ?>',
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                }).then((result) => {
+                    window.location.href = 'withdrawal.php';
+                });
+                <?php unset($_SESSION['error']); ?>
+            <?php endif; ?>
         });
     </script>
 </body>

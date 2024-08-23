@@ -22,68 +22,69 @@ while ($user = $result->fetch_assoc()) {
     }
 }
 
+// Ambil ID pengguna yang sedang login
+$stmt = $conn->prepare("SELECT id FROM users WHERE fullname = ?");
+$stmt->bind_param("s", $logged_in_user);
+$stmt->execute();
+$result = $stmt->get_result();
+$user_id = $result->fetch_assoc()['id'];
+
 // Ambil total tabungan pengguna yang sedang login dengan status 'Done'
 $stmt = $conn->prepare("
     SELECT SUM(jumlah) as total_amount 
     FROM nabung 
-    WHERE user_id = (SELECT id FROM users WHERE fullname = ?) 
+    WHERE user_id = ? 
     AND status = 'Done'
 ");
-$stmt->bind_param("s", $logged_in_user);
+$stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
 $logged_in_user_amount = $result->fetch_assoc()['total_amount'] ?? 0; // Gunakan 0 jika tidak ada data
 
+// Ambil total penarikan pengguna yang sedang login
+$stmt = $conn->prepare("
+    SELECT SUM(jumlah) as total_withdrawn 
+    FROM withdrawal 
+    WHERE user_id = ?
+");
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$total_withdrawn = $result->fetch_assoc()['total_withdrawn'] ?? 0; // Gunakan 0 jika tidak ada data
+
+// Hitung saldo akhir setelah dikurangi penarikan
+$logged_in_user_amount -= $total_withdrawn;
+
 // Ambil total tabungan untuk pengguna lain dengan status 'Done'
 $other_users_amounts = [];
 foreach ($other_users as $other_user) {
+    // Ambil ID pengguna lain
+    $stmt = $conn->prepare("SELECT id FROM users WHERE fullname = ?");
+    $stmt->bind_param("s", $other_user);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $other_user_id = $result->fetch_assoc()['id'];
+
     // Ambil total tabungan untuk nama pengguna lain dengan status 'Done'
     $stmt = $conn->prepare("
         SELECT SUM(jumlah) as total_amount 
         FROM nabung 
-        WHERE user_id = (SELECT id FROM users WHERE fullname = ?) 
+        WHERE user_id = ? 
         AND status = 'Done'
     ");
-    $stmt->bind_param("s", $other_user);
+    $stmt->bind_param("i", $other_user_id);
     $stmt->execute();
     $result = $stmt->get_result();
     $other_users_amounts[$other_user] = $result->fetch_assoc()['total_amount'] ?? 0; // Gunakan 0 jika tidak ada data
 }
-function terbilang($number)
-{
-    $number = abs($number);
-    $words = array("", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas");
-    $temp = "";
-    if ($number < 12) {
-        $temp = " " . $words[$number];
-    } else if ($number < 20) {
-        $temp = terbilang($number - 10) . " Belas";
-    } else if ($number < 100) {
-        $temp = terbilang($number / 10) . " Puluh" . terbilang($number % 10);
-    } else if ($number < 200) {
-        $temp = " Seratus" . terbilang($number - 100);
-    } else if ($number < 1000) {
-        $temp = terbilang($number / 100) . " Ratus" . terbilang($number % 100);
-    } else if ($number < 2000) {
-        $temp = " Seribu" . terbilang($number - 1000);
-    } else if ($number < 1000000) {
-        $temp = terbilang($number / 1000) . " Ribu" . terbilang($number % 1000);
-    } else if ($number < 1000000000) {
-        $temp = terbilang($number / 1000000) . " Juta" . terbilang($number % 1000000);
-    } else if ($number < 1000000000000) {
-        $temp = terbilang($number / 1000000000) . " Miliar" . terbilang(fmod($number, 1000000000));
-    } else if ($number < 1000000000000000) {
-        $temp = terbilang($number / 1000000000000) . " Triliun" . terbilang(fmod($number, 1000000000000));
-    }
-    return $temp;
-}
 
+// Hitung total tabungan semua pengguna
 $total_all_users_amount = $logged_in_user_amount;
 foreach ($other_users as $other_user) {
     $total_all_users_amount += $other_users_amounts[$other_user];
 }
 
-// mengambil teks
+// Mengambil teks marquee
 $query = "SELECT text FROM text WHERE id = 1";
 $result = mysqli_query($conn, $query);
 
@@ -92,6 +93,66 @@ if ($result) {
     $marqueeText = $row['text']; // Menyimpan teks dari database
 } else {
     $marqueeText = "Default marquee text"; // Teks default jika query gagal
+}
+function terbilang($number)
+{
+    $number = intval($number);
+    $words = [
+        0 => 'Nol',
+        1 => 'Satu',
+        2 => 'Dua',
+        3 => 'Tiga',
+        4 => 'Empat',
+        5 => 'Lima',
+        6 => 'Enam',
+        7 => 'Tujuh',
+        8 => 'Delapan',
+        9 => 'Sembilan',
+        10 => 'Sepuluh',
+        11 => 'Sebelas',
+        12 => 'Dua Belas',
+        13 => 'Tiga Belas',
+        14 => 'Empat Belas',
+        15 => 'Lima Belas',
+        16 => 'Enam Belas',
+        17 => 'Tujuh Belas',
+        18 => 'Delapan Belas',
+        19 => 'Sembilan Belas',
+        20 => 'Dua Puluh',
+        30 => 'Tiga Puluh',
+        40 => 'Empat Puluh',
+        50 => 'Lima Puluh',
+        60 => 'Enam Puluh',
+        70 => 'Tujuh Puluh',
+        80 => 'Delapan Puluh',
+        90 => 'Sembilan Puluh',
+        100 => 'Seratus',
+        1000 => 'Ribu',
+        1000000 => 'Juta',
+        1000000000 => 'Miliar'
+    ];
+
+    if ($number < 21) {
+        return $words[$number];
+    } elseif ($number < 100) {
+        $tens = floor($number / 10) * 10;
+        $units = $number % 10;
+        return $words[$tens] . ($units ? ' ' . $words[$units] : '');
+    } elseif ($number < 1000) {
+        $hundreds = floor($number / 100);
+        $remainder = $number % 100;
+        return ($hundreds > 1 ? $words[$hundreds] : '') . ' Ratus' . ($remainder ? ' ' . terbilang($remainder) : '');
+    } elseif ($number < 1000000) {
+        $thousands = floor($number / 1000);
+        $remainder = $number % 1000;
+        return terbilang($thousands) . ' Ribu' . ($remainder ? ' ' . terbilang($remainder) : '');
+    } elseif ($number < 1000000000) {
+        $millions = floor($number / 1000000);
+        $remainder = $number % 1000000;
+        return terbilang($millions) . ' Juta' . ($remainder ? ' ' . terbilang($remainder) : '');
+    } else {
+        return 'Jumlah terlalu besar';
+    }
 }
 ?>
 <!DOCTYPE html>
