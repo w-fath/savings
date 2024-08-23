@@ -265,19 +265,6 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 ===============================================================
 link : https://drive.google.com/file/d/1tDvltG6fiWsF23UkQgicgHNKgWalb1jM/view?usp=sharing
 ===============================================================
